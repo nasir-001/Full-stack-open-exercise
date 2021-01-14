@@ -1,0 +1,80 @@
+name: Deployment pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize]
+
+jobs:
+  simple_deployment_pipeline:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+
+      - name: npm install
+        run: npm install
+
+      - name: lint
+        run: npm run lint
+
+      - name: test
+        run: npm run test
+      
+      # - name: e2e tests
+      #   uses: cypress-io/github-action@v2
+      #   with:
+      #     command: npm run test:e2e
+      #     start: node app.js
+      #     wait-on: 'http://localhost:5000'
+
+  deployment_method:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.8.9
+        if: ${{ github.event_name == 'push' }}
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "fullstack-part"
+          heroku_email: "nasirlawal001@gmail.com"
+          healthcheck: "https://fullstack-part.herokuapp.com/health"
+          checkstring: "ok"
+          rollbackonhealthcheckfailed: true
+          
+  adding_tag:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+      if: ${{ github.event_name == 'push' }}
+      with:
+        fetch-depth: '0'
+    - name: Bump version and push tag
+      uses: anothrNick/github-tag-action@1.26.0
+      env:
+        RELEASE_BRANCHES: ${{ secrets.GITHUB_TOKEN }}
+        WITH_V: true
+
+  slag_integration:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: workflow,job,commit,repo,ref,author,took
+          custom_payload: |
+            {
+              username: 'action-slack',
+              icon_emoji: ':octocat:',
+              attachments: [{
+                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
+                text: `${process.env.AS_WORKFLOW}\n${process.env.AS_JOB} (${process.env.AS_COMMIT}) of ${process.env.AS_REPO}@${process.env.AS_REF} by ${process.env.AS_AUTHOR} succeeded in ${process.env.AS_TOOK}`,
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,10 @@
+POST http://localhost:3001/api/blogs
+Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJvb3QiLCJpZCI6IjVmYzI2ZjZmMjA5MjE2Mzk3MGU0YTU3YiIsImlhdCI6MTYwNjU3OTE4N30.MhXRH_pvZOB17iBj4ZZ3qHHuB4sEjvjGLqPYOL3Nkes
+
+{
+    "title": "This is the blog title from REST Client",
+    "author": "Ada Lovalace",
+    "url": "wwww.google.com",
+    "likes": 2
+}
